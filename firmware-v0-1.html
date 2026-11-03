@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HUD Firmware v0.1 - RPM First</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0d14;--panel:#121622;--line:#232838;--ink:#e7eaf3;--mute:#8f99b3;--accent:#ffc070;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:28px 16px 56px}
+.wrap{max-width:960px;margin:0 auto}
+a{color:var(--accent)}
+.back{font:700 12px Montserrat,sans-serif;letter-spacing:.08em;text-decoration:none;color:var(--mute)}
+.back:hover{color:var(--ink)}
+h1,h2{font-family:Montserrat,sans-serif;font-weight:800;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(26px,5vw,38px);margin:14px 0 6px}
+h2{font-size:20px;margin:36px 0 10px}
+.lede{color:var(--mute);margin:0 0 24px;max-width:66ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:22px}
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+figure img{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#000}
+figcaption{font:700 12px Montserrat,sans-serif;letter-spacing:.04em;color:var(--mute)}
+pre{background:#05060a;border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+code{font-family:ui-monospace,Menlo,monospace}
+.doc{max-width:760px}
+.note{color:var(--mute);font-size:14px}
+</style>
+</head><body><div class="wrap">
+<a class="back" href="index.html">← W212 GAUGE PROJECT</a>
+<div class="doc">
+<h1 id="hud-firmware-v01---rpm-first-esp32-2432s024-can">HUD Firmware v0.1 - RPM First (ESP32-2432S024 + CAN)</h1>
+<p>Target: ESP32-2432S024 (2.4 inch, 240x320), Arduino IDE, wired CAN via SN65HVD230 transceiver. Car: 2011 Mercedes E350 (W212, M272). This first version does one job: read RPM from the car as fast and accurately as possible and show it big on screen.</p>
+<h2 id="before-you-flash-read-this">Before you flash (read this)</h2>
+<ul><li><p>I could not verify the exact pinout of your board (my web searches failed), so the CAN pins below are placeholders. Check your board&#39;s pin diagram for two free GPIOs before wiring. Do not wire the transceiver until you confirm the pins.</p></li><li><p>The screen needs a TFT_eSPI User_Setup file for this board. I will give you that in the next step once we confirm the pins and touch type.</p></li><li><p>Do not power the ESP32 from the OBD2 12V line directly. Use a 12V to 5V buck converter.</p></li><li><p>Wiring: OBD2 pin 6 = CAN High, pin 14 = CAN Low, pin 16 = 12V, pins 4 and 5 = ground. CAN H and CAN L go to the transceiver. Transceiver TX/RX go to the two ESP32 pins you choose.</p></li></ul>
+<h2 id="how-rpm-polling-works">How RPM polling works</h2>
+<ul><li><p>Standard OBD2 request for RPM is Mode 01, PID 0C.</p></li><li><p>Send a CAN frame to ID 0x7DF with data: 02 01 0C 00 00 00 00 00.</p></li><li><p>The engine ECU replies on ID 0x7E8 with: 04 41 0C A B. RPM = ((A * 256) + B) / 4.</p></li><li><p>To keep updates fast, the code sends the next request as soon as a reply arrives, instead of waiting a fixed delay.</p></li></ul>
+<h2 id="code">Code</h2>
+<pre><code class="language-cpp">#include &lt;Arduino.h&gt;
+#include &quot;driver/twai.h&quot;
+
+// ====== CHANGE THESE after checking your board&#39;s free pins ======
+#define CAN_TX_PIN GPIO_NUM_22   // PLACEHOLDER
+#define CAN_RX_PIN GPIO_NUM_27   // PLACEHOLDER
+// ================================================================
+
+float rpm = 0;
+unsigned long lastRequest = 0;
+bool waitingForReply = false;
+
+void setupCAN() {
+  twai_general_config_t g = TWAI_GENERAL_CONFIG_DEFAULT(CAN_TX_PIN, CAN_RX_PIN, TWAI_MODE_NORMAL);
+  twai_timing_config_t t = TWAI_TIMING_CONFIG_500KBITS();  // standard OBD2 CAN speed
+  twai_filter_config_t f = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+  if (twai_driver_install(&amp;g, &amp;t, &amp;f) != ESP_OK) { Serial.println(&quot;CAN install failed&quot;); return; }
+  if (twai_start() != ESP_OK) { Serial.println(&quot;CAN start failed&quot;); return; }
+  Serial.println(&quot;CAN started&quot;);
+}
+
+void requestRPM() {
+  twai_message_t m = {};
+  m.identifier = 0x7DF;
+  m.data_length_code = 8;
+  m.data[0] = 0x02; m.data[1] = 0x01; m.data[2] = 0x0C;
+  twai_transmit(&amp;m, pdMS_TO_TICKS(10));
+  lastRequest = millis();
+  waitingForReply = true;
+}
+
+void readReplies() {
+  twai_message_t m;
+  while (twai_receive(&amp;m, 0) == ESP_OK) {
+    if (m.identifier == 0x7E8 &amp;&amp; m.data[1] == 0x41 &amp;&amp; m.data[2] == 0x0C) {
+      rpm = ((m.data[3] * 256.0) + m.data[4]) / 4.0;
+      waitingForReply = false;
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  setupCAN();
+}
+
+void loop() {
+  readReplies();
+  // send next request right after a reply, or retry after 50 ms with no reply
+  if (!waitingForReply || millis() - lastRequest &gt; 50) requestRPM();
+  static unsigned long lastPrint = 0;
+  if (millis() - lastPrint &gt; 100) {
+    Serial.print(&quot;RPM: &quot;); Serial.println(rpm, 0);
+    lastPrint = millis();
+  }
+}</code></pre>
+<h2 id="what-this-version-does-and-does-not-do">What this version does and does not do</h2>
+<ul><li><p>Does: reads RPM over CAN as fast as the ECU answers and prints it to the Serial Monitor.</p></li><li><p>Does not yet: draw on the screen, read speed, fuel trims, or codes, or play the greeting. Those come next, one piece at a time.</p></li><li><p>First test: with the car running, open Serial Monitor at 115200 baud. You should see RPM near idle (about 600 to 800). If you see nothing, the pins, wiring, or CAN speed are the first things to check.</p></li></ul>
+<h2 id="next-steps">Next steps</h2>
+<ol><li><p>Confirm the free GPIO pins and touch type, then set up the screen driver.</p></li><li><p>Draw RPM big on screen with smoothing.</p></li><li><p>Add speed (PID 0D) polled just as fast.</p></li><li><p>Add fuel trims (PIDs 06 to 09) on a slower cycle, with the lean warning.</p></li><li><p>Add the Welcome, Xavier greeting.</p></li></ol>
+
+</div>
+</div></body></html>

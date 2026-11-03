@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+</head><body>
+<title>W212 Screen Mounts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: a dark cabin. Two to-scale mount studies stacked, each a drawn dash part with Xavier's own gauge frames inside, specs underneath. */
+:root{
+  --cabin:#07080c; --panel:#10131b; --line:#232838; --ink:#e7eaf3; --mute:#8f99b3;
+  --chrome:#b9bcc4; --chrome-dk:#6c707a; --hazard:#e2433f; --amber:#f2a33a; --rpm:#ffc070; --ok:#7fd17a; --accent:#7d8ee0;
+  --f-display:"Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --f-body:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--cabin);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:28px 48px}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+header h1{font-family:var(--f-display);font-weight:800;font-size:clamp(24px,5vw,34px);letter-spacing:.01em;margin:0;text-wrap:balance}
+header p{color:var(--mute);margin:6px 0 0;max-width:62ch}
+.eyebrow{font-family:var(--f-display);font-weight:700;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+section{display:flex;flex-direction:column;gap:14px}
+section h2{font-family:var(--f-display);font-weight:800;font-size:20px;margin:0;text-wrap:balance}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:clamp(14px,3vw,28px);overflow:hidden}
+
+/* ---- vent assembly, 30 x 7.5 cm ---- */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.assy{aspect-ratio:600/150;width:100%;min-width:560px;border-radius:2.6%/10.4%;background:linear-gradient(#d0d3da,#8a8e98 55%,#c3c6cd);padding:1.33% 1.33%;container-type:inline-size}
+.assy-in{height:100%;background:#16171b;border-radius:1.7%/7%;display:grid;grid-template-columns:220fr 96fr 220fr;gap:2%;padding:1.2% 1.7%}
+.vent{position:relative;border-radius:6px;background:#0d0d10;display:grid;place-items:center;overflow:hidden}
+.louvers{position:absolute;inset:0;background:repeating-linear-gradient(#0d0d10 0 9%,#cfd2d8 9% 12.5%,#0d0d10 12.5% 15%)}
+.slider{position:absolute;left:43%;top:40%;width:20%;height:12%;border-radius:4px;background:linear-gradient(#a7aab2,#6b6f78)}
+.mid{display:flex;align-items:center;justify-content:center;gap:9%}
+.wheel{width:16%;height:72%;border-radius:999px;background:repeating-linear-gradient(#2b2c31 0 9%,#cdd0d6 9% 13%);box-shadow:inset 0 0 0 1px #4a4c53}
+.haz{width:44%;height:94%;border-radius:6px;background:#26272c;box-shadow:inset 0 0 0 1px #3c3e45;display:flex;flex-direction:column;align-items:center;justify-content:space-around;padding:12% 0}
+.haz svg{width:62%;height:auto}
+.bag{font-family:var(--f-body);font-weight:700;font-size:clamp(5px,1.05cqw,10px);color:var(--amber);text-align:center;line-height:1.1}
+
+/* 4.3-inch screen, 95 x 54 mm in a 110 x 60 mm opening */
+.scr{position:relative;width:86.4%;aspect-ratio:95/54;max-width:100%;background:#000;border-radius:3px;box-shadow:0 0 0 2px #050506,0 0 0 3px #2a2c33;overflow:hidden;container-type:inline-size}
+.scr img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
+.hud{position:absolute;inset:0;font-family:var(--f-display);color:#fff;font-variant-numeric:tabular-nums}
+.spd{position:absolute;left:5%;top:5%;line-height:.9}
+.spd b{display:block;font-weight:800;font-size:17cqw}
+.spd span{display:block;font-weight:700;font-size:4.2cqw;letter-spacing:.3em;color:#c9cfe0;margin-top:2%}
+.rt{position:absolute;right:5%;top:6%;text-align:right;line-height:1}
+.rt b{display:block;font-weight:800;font-size:8cqw}
+.rt span{display:block;font-weight:700;font-size:3cqw;letter-spacing:.25em;color:#c9cfe0;margin-top:3%}
+.rt i{display:block;font-style:normal;font-weight:700;font-size:3.6cqw;color:var(--ok);margin-top:8%}
+.bars{position:absolute;left:5%;right:5%;bottom:5%;display:flex;align-items:flex-end;gap:1%;height:7%}
+.bars s{flex:1;background:#151a2c;text-decoration:none;border-radius:1px}
+.bars s.on{background:var(--rpm)}
+.bars s.red{background:#5a1f1f}
+.rpmtxt{position:absolute;left:5%;bottom:14%;font-weight:800;font-size:4.2cqw;letter-spacing:.06em}
+.rpmtxt span{font-weight:700;font-size:2.8cqw;letter-spacing:.25em;color:#c9cfe0;margin-left:.6em}
+
+/* ---- pillar ---- */
+.pillar-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(16px,4vw,40px);align-items:center}
+.cabin{position:relative;aspect-ratio:3/4;max-width:100%;width:100%;border-radius:10px;overflow:hidden;background:linear-gradient(160deg,#1a2338 0%,#0b0f18 60%)}
+.glass{position:absolute;inset:0;background:linear-gradient(200deg,rgba(125,142,224,.10),transparent 50%)}
+.dash{position:absolute;left:0;right:0;bottom:0;height:18%;background:linear-gradient(#1b1c21,#0e0f12);border-top:2px solid #2d2f36}
+.apillar{position:absolute;left:4%;bottom:12%;width:44%;height:96%;background:linear-gradient(90deg,#1f2026,#2a2b31 60%,#191a1f);clip-path:polygon(0 100%,72% 100%,100% 0,64% 0);}
+.pod{position:absolute;left:17%;bottom:19%;width:38%;transform:rotate(10deg);transform-origin:50% 100%;display:flex;flex-direction:column;gap:5%;padding:5% 5% 7%;background:linear-gradient(#24262d,#15161b);border-radius:12px;box-shadow:inset 0 0 0 1px #3a3d46,0 10px 24px rgba(0,0,0,.6)}
+.pod .s{aspect-ratio:4/3;width:100%;max-width:100%;background:#000;border-radius:3px;box-shadow:0 0 0 2px #050506,0 0 0 3px #2a2c33;overflow:hidden}
+.pod .s img{width:100%;height:100%;object-fit:cover;display:block}
+.pod .s.px img{image-rendering:pixelated}
+.vslot{position:absolute;right:0;bottom:4%;width:40%;height:9%;border-radius:6px 0 0 6px;background:repeating-linear-gradient(#0d0d10 0 18%,#cfd2d8 18% 26%);opacity:.75}
+
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 22px;margin:0}
+.specs div{min-width:0;border-top:1px solid var(--line);padding-top:8px}
+.specs dt{font-family:var(--f-display);font-weight:700;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.specs dd{margin:3px 0 0;font-variant-numeric:tabular-nums}
+.note{color:var(--mute);margin:0;max-width:68ch}
+.note strong{color:var(--ink);font-weight:600}
+.pv dl{margin:0}
+@media (max-width:620px){.pillar-stage{grid-template-columns:1fr}.cabin{max-width:360px;margin:0 auto}}
+@media (prefers-reduced-motion:no-preference){.bars s.on{transition:background .2s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">2011 E350 · M272 · night city theme</div>
+    <h1>W212 Screen Mounts</h1>
+    <p>Two ways to fit your gauge, drawn to scale. Both use real frames from your W212 Gauge Test Bench at 28 mph in 2nd.</p>
+  </header>
+
+  <section aria-labelledby="a-h">
+    <div class="eyebrow">Option A</div>
+    <h2 id="a-h">4.3-inch in the driver-side center vent</h2>
+    <div class="stage scroll">
+      <div class="assy" role="img" aria-label="Center vent assembly with a 4.3-inch gauge in the left vent, hazard switch in the middle, stock louvers on the right">
+        <div class="assy-in">
+          <div class="vent">
+            <div class="scr">
+              <img src="screen-mounts-car-wide.png" alt="">
+              <div class="hud">
+                <div class="spd"><b>28</b><span>MPH</span></div>
+                <div class="rt"><b>2</b><span>GEAR</span><i>195°F</i></div>
+                <div class="rpmtxt">3,300<span>RPM</span></div>
+                <div class="bars" id="bars"></div>
+              </div>
+            </div>
+          </div>
+          <div class="mid">
+            <div class="wheel"></div>
+            <div class="haz">
+              <svg viewBox="0 0 40 34" aria-hidden="true"><path d="M20 3 37 31H3Z" fill="none" stroke="var(--hazard)" stroke-width="3.2" stroke-linejoin="round"/><path d="M20 12 29 27H11Z" fill="none" stroke="var(--hazard)" stroke-width="2.2" stroke-linejoin="round"/></svg>
+              <div class="bag">PASS<br>AIR BAG OFF</div>
+            </div>
+            <div class="wheel"></div>
+          </div>
+          <div class="vent"><div class="louvers"></div><div class="slider"></div></div>
+        </div>
+      </div>
+    </div>
+    <dl class="specs">
+      <div><dt>Opening</dt><dd>About 110 × 60 mm usable</dd></div>
+      <div><dt>Screen</dt><dd>95 × 54 mm, 800 × 480</dd></div>
+      <div><dt>Board limit</dt><dd>110 × 60 mm or smaller, electronics behind the glass</dd></div>
+      <div><dt>Keeps</dt><dd>Hazard switch, airbag light, passenger vent</dd></div>
+    </dl>
+    <p class="note">The glass fills your vent almost edge to edge. The catch is the board: the Waveshare 4.3B is 112 × 75 mm, so it won't fit. You need a 4.3-inch board whose electronics sit behind the screen.</p>
+  </section>
+
+  <section aria-labelledby="b-h">
+    <div class="eyebrow">Option B</div>
+    <h2 id="b-h">Pillar pod with stacked screens</h2>
+    <div class="stage pillar-stage">
+      <div class="cabin" role="img" aria-label="Driver-side A-pillar with a pod holding two stacked screens: gauge data on top, the car on the road below">
+        <div class="glass"></div>
+        <div class="apillar"></div>
+        <div class="dash"></div>
+        <div class="vslot"></div>
+        <div class="pod">
+          <div class="s"><img src="screen-mounts-gauge.png" alt=""></div>
+          <div class="s px"><img src="screen-mounts-car.png" alt=""></div>
+        </div>
+      </div>
+      <div class="pv">
+        <dl class="specs">
+          <div><dt>Screens</dt><dd>Your two 2.4-inch DORAGA boards, 49 × 37 mm each</dd></div>
+          <div><dt>Layout</dt><dd>Top: speed, RPM, gear, temps. Bottom: your car on the road</dd></div>
+          <div><dt>Pod</dt><dd>Custom 3D-printed shell over the lower pillar trim</dd></div>
+          <div><dt>Keeps</dt><dd>Both center vents working</dd></div>
+        </dl>
+      </div>
+    </div>
+    <p class="note">This reuses your current firmware layout exactly, so nothing needs porting. <strong>Mount it to the lower pillar and dash corner, not across the pillar trim seam:</strong> the W212's curtain airbags deploy from the headliner and pillar edge, and a pod there could block them or get thrown.</p>
+  </section>
+</div>
+
+<script>
+(function(){
+  var b=document.getElementById('bars'); if(!b) return;
+  for(var i=0;i<26;i++){var s=document.createElement('s'); if(i<12) s.className='on'; else if(i>21) s.className='red'; s.style.height=(40+i*2.4)+'%'; b.appendChild(s);}
+})();
+</script>
+
+
+</body></html>

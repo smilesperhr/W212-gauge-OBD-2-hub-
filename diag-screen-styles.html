@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diag Screen Styles</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0d14;--panel:#121622;--line:#232838;--ink:#e7eaf3;--mute:#8f99b3;--accent:#ffc070;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:28px 16px 56px}
+.wrap{max-width:960px;margin:0 auto}
+a{color:var(--accent)}
+.back{font:700 12px Montserrat,sans-serif;letter-spacing:.08em;text-decoration:none;color:var(--mute)}
+.back:hover{color:var(--ink)}
+h1,h2{font-family:Montserrat,sans-serif;font-weight:800;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(26px,5vw,38px);margin:14px 0 6px}
+h2{font-size:20px;margin:36px 0 10px}
+.lede{color:var(--mute);margin:0 0 24px;max-width:66ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:22px}
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+figure img{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#000}
+figcaption{font:700 12px Montserrat,sans-serif;letter-spacing:.04em;color:var(--mute)}
+pre{background:#05060a;border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+code{font-family:ui-monospace,Menlo,monospace}
+.doc{max-width:760px}
+.note{color:var(--mute);font-size:14px}
+</style>
+</head><body><div class="wrap">
+<a class="back" href="index.html">← W212 GAUGE PROJECT</a>
+<div class="doc">
+<h1 id="diag-screen-styles">Diag Screen Styles</h1>
+<p>Mockups for the two stacked vent screens when a code pops up. The top screen shows a hologram-style picture of the faulty part flashing red, and the bottom screen shows the code and what it means. The example fault is P0420, catalytic converter efficiency below threshold on bank 1.</p>
+<p>In each pair the top screen shows the flashing part and the bottom one shows the code. The 3 out of 10 severity is a placeholder draft score.</p>
+<h2 id="the-four-styles">The four styles</h2>
+<p><strong>A, Wireframe hologram (Iron Man style).</strong> Glowing cyan wireframe of the exhaust run with scan lines and corner brackets; the catalytic converter pulses red. Bottom screen: a big red code, a two-line description and a 10-segment severity bar.</p>
+<p><strong>B, Service blueprint (Mercedes WIS style).</strong> Side view of the W212 like a workshop manual drawing, with the faulty part in red and a leader line to its name. Bottom screen: a clean table of code, system, fault and severity.</p>
+<p><strong>C, Targeting lock (fighter jet HUD).</strong> Top-down view of the car with a red targeting reticle locking onto the part&#39;s location. Bottom screen: a big code, the description scrolling across a ticker band, and the beep pattern.</p>
+<p><strong>D, Claude&#39;s pick: spy dossier.</strong> Mixes the best bits: a cyan outline of the M272 with the exhaust path, the faulty part glowing red with a &quot;FAULT LOCATED&quot; tag. Bottom screen: the code, a plain-English line on what to do, and a small severity dial out of 10.</p>
+<h2 id="how-the-flashing-works-on-the-esp32">How the flashing works on the ESP32</h2>
+<p>The red part toggles on and off about twice a second, with a soft glow ring that fades in and out, so it reads as a hologram rather than a warning light. Each part (engine, cylinders, exhaust, cat, O2 sensors, cooling, transmission) is its own small drawing, and the code&#39;s category decides which one lights up.</p>
+<h2 id="misfire-screen-concept">Misfire screen concept</h2>
+<p>Both screens are drawn at their real 320 by 240 pixel size, so the text sizes match what the ESP32 will show. The severity score and trim reading are example values, and the cylinder numbering (1 to 3 on bank 1, 4 to 6 on bank 2, cylinder 1 at the front) should be checked against the WIS diagram.</p>
+<h2 id="real-size-preview-for-iphone-air">Real-size preview for iPhone Air</h2>
+<p>Open this on the iPhone Air held upright. Each screen is drawn to the 2.4 inch display&#39;s real size: 1.92 by 1.44 inches, about 49 by 37 mm. The bar under them should measure 49 mm; if it doesn&#39;t, pinch-zoom until it does, and then the screens are true to life.</p>
+<h2 id="rpm-and-speed-page">RPM and speed page</h2>
+<p>The same real-size scale as above, in bold Montserrat. The speeds and RPMs are example values. The first sketch of the code draws blocky segment digits for speed; to match this look, the code needs to switch to Montserrat fonts.</p>
+<p class="note">The 4 interactive mockups embedded in the original aren't included here.</p>
+</div>
+</div></body></html>

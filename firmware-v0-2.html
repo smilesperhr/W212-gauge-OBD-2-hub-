@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HUD Firmware v0.2 - Base Software</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0d14;--panel:#121622;--line:#232838;--ink:#e7eaf3;--mute:#8f99b3;--accent:#ffc070;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:28px 16px 56px}
+.wrap{max-width:960px;margin:0 auto}
+a{color:var(--accent)}
+.back{font:700 12px Montserrat,sans-serif;letter-spacing:.08em;text-decoration:none;color:var(--mute)}
+.back:hover{color:var(--ink)}
+h1,h2{font-family:Montserrat,sans-serif;font-weight:800;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(26px,5vw,38px);margin:14px 0 6px}
+h2{font-size:20px;margin:36px 0 10px}
+.lede{color:var(--mute);margin:0 0 24px;max-width:66ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:22px}
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+figure img{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#000}
+figcaption{font:700 12px Montserrat,sans-serif;letter-spacing:.04em;color:var(--mute)}
+pre{background:#05060a;border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+code{font-family:ui-monospace,Menlo,monospace}
+.doc{max-width:760px}
+.note{color:var(--mute);font-size:14px}
+</style>
+</head><body><div class="wrap">
+<a class="back" href="index.html">← W212 GAUGE PROJECT</a>
+<div class="doc">
+<h1 id="hud-firmware-v02---base-software-rpm-speed-greeting-generic-codes">HUD Firmware v0.2 - Base Software (RPM, Speed, Greeting, Generic Codes)</h1>
+<p>Target: ESP32-2432S024 (2.4 inch, 240x320, ILI9341), Arduino IDE, wired CAN via SN65HVD230. Car: 2011 Mercedes E350 (W212, M272). Builds on v0.1.</p>
+<h2 id="read-before-flashing">Read before flashing</h2>
+<ul><li><p>Pin numbers are PLACEHOLDERS. My web searches failed, so I could not verify your board&#39;s pinout. Check the board&#39;s pin diagram for two free GPIOs for CAN and the pins for the screen and speaker before wiring or flashing.</p></li><li><p>Screen: install the TFT_eSPI library and use a User_Setup that matches this board. I will give you that file once we confirm pins and touch type.</p></li><li><p>Greeting audio is a placeholder beep. Swap in your own clip later.</p></li><li><p>Power the ESP32 from a 12V to 5V buck converter, never directly from the OBD2 12V line.</p></li><li><p>Test the code reading with the car parked. Reading codes is safe. Do not use this to clear codes or write anything yet.</p></li></ul>
+<h2 id="what-this-version-does">What this version does</h2>
+<ol><li><p>Startup: shows a Welcome screen, plays a beep, and picks a greeting by time of day (time comes from an RTC value later; for now it uses a simple placeholder).</p></li><li><p>Reads RPM (PID 0C) and speed (PID 0D) back to back for fast updates.</p></li><li><p>Reads the check engine light status and stored generic codes (Mode 01 PID 01, then Mode 03) every few seconds.</p></li><li><p>Draws big RPM and speed on screen, with an optional mirror flag for windshield HUD use.</p></li></ol>
+<h2 id="code">Code</h2>
+<pre><code class="language-cpp">#include &lt;Arduino.h&gt;
+#include &lt;TFT_eSPI.h&gt;
+#include &quot;driver/twai.h&quot;
+
+TFT_eSPI tft = TFT_eSPI();
+
+// ====== PLACEHOLDERS: CHECK AGAINST YOUR BOARD ======
+#define CAN_TX_PIN GPIO_NUM_22
+#define CAN_RX_PIN GPIO_NUM_27
+#define SPEAKER_PIN 26
+// =====================================================
+
+#define MIRROR_FOR_HUD false   // set true for windshield reflection
+
+float rpm = 0;
+int speedKmh = 0;
+bool milOn = false;
+int dtcCount = 0;
+String dtcList = &quot;&quot;;
+
+unsigned long lastReq = 0, lastCodeCheck = 0;
+bool waiting = false;
+uint8_t nextPid = 0x0C;   // alternate between RPM and speed
+
+void setupCAN() {
+  twai_general_config_t g = TWAI_GENERAL_CONFIG_DEFAULT(CAN_TX_PIN, CAN_RX_PIN, TWAI_MODE_NORMAL);
+  twai_timing_config_t t = TWAI_TIMING_CONFIG_500KBITS();
+  twai_filter_config_t f = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+  twai_driver_install(&amp;g, &amp;t, &amp;f);
+  twai_start();
+}
+
+void sendRequest(uint8_t mode, uint8_t pid) {
+  twai_message_t m = {};
+  m.identifier = 0x7DF;
+  m.data_length_code = 8;
+  if (mode == 0x03) { m.data[0] = 0x01; m.data[1] = 0x03; }
+  else { m.data[0] = 0x02; m.data[1] = mode; m.data[2] = pid; }
+  twai_transmit(&amp;m, pdMS_TO_TICKS(10));
+  lastReq = millis();
+  waiting = true;
+}
+
+String decodeDTC(uint8_t a, uint8_t b) {
+  const char letters[] = {&#39;P&#39;, &#39;C&#39;, &#39;B&#39;, &#39;U&#39;};
+  char buf[6];
+  buf[0] = letters[(a &gt;&gt; 6) &amp; 0x03];
+  buf[1] = &#39;0&#39; + ((a &gt;&gt; 4) &amp; 0x03);
+  buf[2] = &quot;0123456789ABCDEF&quot;[a &amp; 0x0F];
+  buf[3] = &quot;0123456789ABCDEF&quot;[(b &gt;&gt; 4) &amp; 0x0F];
+  buf[4] = &quot;0123456789ABCDEF&quot;[b &amp; 0x0F];
+  buf[5] = 0;
+  return String(buf);
+}
+
+void readReplies() {
+  twai_message_t m;
+  while (twai_receive(&amp;m, 0) == ESP_OK) {
+    if (m.identifier &lt; 0x7E8 || m.identifier &gt; 0x7EF) continue;
+    if (m.data[1] == 0x41 &amp;&amp; m.data[2] == 0x0C) {
+      rpm = ((m.data[3] * 256.0) + m.data[4]) / 4.0; waiting = false;
+    } else if (m.data[1] == 0x41 &amp;&amp; m.data[2] == 0x0D) {
+      speedKmh = m.data[3]; waiting = false;
+    } else if (m.data[1] == 0x41 &amp;&amp; m.data[2] == 0x01) {
+      milOn = m.data[3] &amp; 0x80;
+      dtcCount = m.data[3] &amp; 0x7F; waiting = false;
+    } else if (m.data[1] == 0x43) {
+      // Mode 03 reply: first byte after 0x43 is code count, then 2 bytes per code
+      // NOTE: only handles single-frame replies (up to 2 codes). Multi-frame comes next.
+      dtcList = &quot;&quot;;
+      int n = m.data[2];
+      for (int i = 0; i &lt; n &amp;&amp; i &lt; 2; i++) {
+        dtcList += decodeDTC(m.data[3 + i * 2], m.data[4 + i * 2]) + &quot; &quot;;
+      }
+      waiting = false;
+    }
+  }
+}
+
+void greet() {
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(3);
+  tft.setCursor(20, 100);
+  tft.println(&quot;Welcome,&quot;);
+  tft.setCursor(20, 140);
+  tft.println(&quot;Mr. Parsons&quot;);
+  tone(SPEAKER_PIN, 880, 300);   // placeholder beep, replace with your clip
+  delay(2500);
+  tft.fillScreen(TFT_BLACK);
+}
+
+void drawGauges() {
+  tft.setTextSize(6);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.setCursor(10, 30);
+  tft.printf(&quot;%4d&quot;, (int)rpm);
+  tft.setTextSize(2);
+  tft.setCursor(10, 90);
+  tft.print(&quot;RPM&quot;);
+  tft.setTextSize(6);
+  tft.setCursor(10, 130);
+  tft.printf(&quot;%3d&quot;, (int)(speedKmh * 0.621371));
+  tft.setTextSize(2);
+  tft.setCursor(10, 190);
+  tft.print(&quot;MPH&quot;);
+  tft.setTextSize(2);
+  tft.setCursor(10, 220);
+  tft.setTextColor(milOn ? TFT_RED : TFT_GREEN, TFT_BLACK);
+  tft.printf(&quot;CEL: %s  &quot;, milOn ? &quot;ON&quot; : &quot;off&quot;);
+  tft.setCursor(10, 245);
+  tft.print(dtcList + &quot;          &quot;);
+}
+
+void setup() {
+  Serial.begin(115200);
+  tft.init();
+  tft.setRotation(MIRROR_FOR_HUD ? 3 : 1);
+  // NOTE: true mirroring needs a flipped sprite or the display&#39;s MADCTL mirror bit;
+  // we will add that when we do the HUD layout.
+  pinMode(SPEAKER_PIN, OUTPUT);
+  greet();
+  setupCAN();
+}
+
+void loop() {
+  readReplies();
+  if (millis() - lastCodeCheck &gt; 5000) {
+    sendRequest(0x01, 0x01);              // MIL status and code count
+    delay(15);
+    if (dtcCount &gt; 0) sendRequest(0x03, 0);  // stored codes
+    lastCodeCheck = millis();
+  } else if (!waiting || millis() - lastReq &gt; 40) {
+    sendRequest(0x01, nextPid);
+    nextPid = (nextPid == 0x0C) ? 0x0D : 0x0C;   // alternate RPM and speed
+  }
+  static unsigned long lastDraw = 0;
+  if (millis() - lastDraw &gt; 80) { drawGauges(); lastDraw = millis(); }
+}</code></pre>
+<h2 id="known-limits-of-this-version">Known limits of this version</h2>
+<ul><li><p>Code reads handle only the first two codes in a single frame. Multi-frame (ISO-TP) handling is the next addition.</p></li><li><p>Codes show as raw numbers like P0420. The plain-English description table comes next.</p></li><li><p>The greeting is the same text every time. Time-of-day and weather come after we add the hotspot.</p></li><li><p>True windshield mirroring is not finished. The rotation flag is only a stand-in until the HUD layout step.</p></li><li><p>Speed is converted from km/h to mph on screen.</p></li><li><p>Fuel trims, advanced Mercedes modules, and transmission data are not included yet.</p></li></ul>
+<h2 id="test-order">Test order</h2>
+<ol><li><p>Flash with no car connected and check the screen and beep work.</p></li><li><p>Confirm the pins, then wire the CAN transceiver with the car parked.</p></li><li><p>Watch RPM and speed on screen and on the Serial Monitor.</p></li><li><p>Only then check code reading.</p></li></ol>
+
+</div>
+</div></body></html>
