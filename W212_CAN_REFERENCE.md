@@ -75,7 +75,7 @@ The 722.9 transmission computer answers read-only KWP2000 requests (service 0x21
 | Shifter position code (candidate) | 21 3A | Byte 4 | P 0x01, R 0x11, N 0x21, D 0x41 | Needs a second scan in a different order |
 | Other ordinal candidates | 21 30 byte 8, 21 34 byte 9, 21 35 byte 1, 21 38 byte 3 | — | Step by one per shifter position | Scans were taken D, N, R, P, so a time counter would look the same; recheck |
 | Current gear (1–7) | — | — | — | Needs a scan while driving |
-| E/S drive program | — | — | — | Needs scans labeled E_MODE and S_MODE |
+| E/S drive program (candidate) | Broadcast 0x205 | Byte 2, bit 0 | 0x8D ↔ 0x8C when E/S is pressed (both raw captures 0032 and 0033) | Confirm with a 15-second hold test to tell a mode state from a button press |
 
 Unchanging identifiers seen in every scan: 21 FA = "MT9500K0" (ASCII, likely the controller's part or software identifier).
 
