@@ -47,6 +47,16 @@ The values the health model and alerts are built on, and where each one came fro
 | Engine management | Bosch ME 9.7 (N3/10), hot film MAF B2/5, coolant sensor B11/4, crank sensor B70 | Mercedes | [5] |
 | Output | 268 hp at 6,000 rpm, 258 lb-ft from 2,500–5,000 rpm, compression 10.7:1 | Mercedes | [5] |
 
+## Leak suspects and mechanical notes
+
+| Item | Detail | Confidence | Source |
+|---|---|---|---|
+| Crankcase ventilation hose at the centrifuge | The crankcase ventilation hose connects at the centrifuge (oil separator) cover on the cylinder head; the cover's seal and radial shaft seal are wear items to check and replace if damaged. A cracked hose or worn seal here lets unmetered air in | Mercedes | [6] AR01.20-P-2100EWS |
+| Cam basic position | Checked at 55° crank angle before ignition TDC on cylinder 1 (305° mark on the belt pulley), and at 40° after TDC with the front cover off; pulse wheel markings must sit centered in the camshaft Hall sensor bores | Mercedes | [6] AR05.20-P-6010EW, AR05.10-P-7601EW |
+| Timing chain rivet bolt | 32 Nm (reference value), engines 272 and 273 | Mercedes | [6] BA05.10-P-1007-01B |
+
+The cam timing items matter for cam/crank correlation codes (P0016-P0019), which on the M272 can point to timing chain or balance shaft wear. Generic OBD doesn't report cam angle, so the hub can only flag those codes, not measure the timing.
+
 ## Sources
 
 1. Mercedes-Benz StarTech, *Fuel Trim* (January 2015). https://www.mbwholesaleparts.com/content/dam/microsites/mb-wholesale-parts/pdf/1501-Jan-MBST-Fuel-Trim.pdf
@@ -55,4 +65,6 @@ The values the health model and alerts are built on, and where each one came fro
 4. Google AI search summary, "M272-specific idle airflow or trim chart" (Nov 3, 2026). Not a primary source; its Mercedes adaptation figures cited a VW/Audi tool and are left out here.
 5. Mercedes-Benz, *M272 Engine Introduction* (student guide, SLK R171), via Mercedes-Benz Club NSK. https://nsk.mercedes-benz-clubs.com/wp-content/uploads/sites/7/2015/05/r171_motor-6-cyl-deel-1.pdf
 
-Pending: M272/M273 manual shared on MBWorld (needs a member download).
+6. Daimler AG, WIS repair procedures, *Engines 272, 273 in Model 212* (compiled PDF shared on MBWorld, 38 pages): AR05.10-P-7601EW Replace timing chain, AP15.10-P-1580EW Replace spark plugs, AR05.20-P-6992EW Remove/install camshafts, AR05.20-P-7201EWE Remove/install camshaft adjusters, AR01.30-P-5700EWL/EWR Front covers, AR01.20-P-2100EWS Remove/install centrifuge, AR01.20-P-5012EL/5013EL Cylinder head covers, AR05.10-P-8127EW Tensioning rail, AR05.10-P-7800EW Chain tensioner, AR05.20-P-6010EW Check basic position of camshafts. Mechanical procedures only; it contains no sensor values or diagnostic limits.
+
+CAN network locations and W212 CAN signal IDs are in [W212_CAN_REFERENCE.md](W212_CAN_REFERENCE.md).
