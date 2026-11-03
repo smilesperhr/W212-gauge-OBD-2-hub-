@@ -50,6 +50,21 @@ From the Racelogic VBOX CAN file **"Mercedes E-Class W212 2010-2016"** [2]. Thes
 
 What these add over OBD: four wheel speeds (wheelspin and launch detection, accurate 0-60), steering angle, brake position, and RPM at the car's broadcast rate instead of request-reply.
 
+## Broadcast traffic at the OBD port (2011 E350, confirmed)
+
+Raw captures from the hub (files 0032 and 0033, Nov 3, 2026, engine idling) show the car's broadcast frames reaching the OBD port, not just diagnostic replies. IDs seen: 001, 003, 005, 007, 045, 04B, 105, 10C, 12D, 19F, 1C1, 201, 203, 204, 205, 206, 207, 208, 245, 26F, 283, 2EF, 319, 375, 39D, 39F, 3B7, 3E3, 3E5, 3E7, 3E9, 3EB, 3F6, 400, 413.
+
+| Signal | ID | Decoding | Rate | Check |
+|---|---|---|---|---|
+| Engine speed | 0x105 | Bytes 1–2, big-endian, 1 rpm per bit (e.g. 02 8D = 653 rpm) | ~10 per second | Matches the engine computer's own OBD answer (642–648 rpm at the same time) |
+| Wheel speeds | 0x203 | Per Racelogic table above; to confirm while driving | ~11 per second | — |
+| Steering angle | 0x003 | Per Racelogic table above; to confirm | ~20 per second | — |
+| Brake | 0x005 | Per Racelogic table above; to confirm | ~10 per second | — |
+
+Racelogic's "start bit 48" for engine speed corresponds to bytes 1–2 here, so its bit numbering counts from the other end; convert every Racelogic start bit the same way.
+
+Also seen: both the engine computer (7E8) and the transmission computer (7E9) answer generic OBD requests for RPM (01 0C), coolant (01 05), load (01 04) and speed (01 0D). Readings must be taken from 7E8 only.
+
 ## Transmission data through the OBD port
 
 The 722.9 transmission computer answers read-only KWP2000 requests (service 0x21, read data by local identifier) at 7E9 through the OBD port, so this works plug-and-play. Found with the hub's transmission scan (v4.3), key on, engine off, foot on brake, Nov 2, 2026 [3].
