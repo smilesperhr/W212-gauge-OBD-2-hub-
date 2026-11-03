@@ -50,7 +50,22 @@ From the Racelogic VBOX CAN file **"Mercedes E-Class W212 2010-2016"** [2]. Thes
 
 What these add over OBD: four wheel speeds (wheelspin and launch detection, accurate 0-60), steering angle, brake position, and RPM at the car's broadcast rate instead of request-reply.
 
+## Transmission data through the OBD port
+
+The 722.9 transmission computer answers read-only KWP2000 requests (service 0x21, read data by local identifier) at 7E9 through the OBD port, so this works plug-and-play. Found with the hub's transmission scan (v4.3), key on, engine off, foot on brake, Nov 2, 2026 [3].
+
+| Data | Request | Where | Values | Status |
+|---|---|---|---|---|
+| **Shifter position** | 21 3B | Byte 2 (second data byte) | ASCII letter: 0x50 "P", 0x52 "R", 0x4E "N", 0x44 "D" | **Confirmed** |
+| Shifter position code (candidate) | 21 3A | Byte 4 | P 0x01, R 0x11, N 0x21, D 0x41 | Needs a second scan in a different order |
+| Other ordinal candidates | 21 30 byte 8, 21 34 byte 9, 21 35 byte 1, 21 38 byte 3 | — | Step by one per shifter position | Scans were taken D, N, R, P, so a time counter would look the same; recheck |
+| Current gear (1–7) | — | — | — | Needs a scan while driving |
+| E/S drive program | — | — | — | Needs scans labeled E_MODE and S_MODE |
+
+Unchanging identifiers seen in every scan: 21 FA = "MT9500K0" (ASCII, likely the controller's part or software identifier).
+
 ## Sources
 
 1. Daimler AG, WIS **GF00.19-P-0800FL**, *CAN electrical connector, as-built configuration*, Model 212.0 (18.12.08; printed 1/25/19).
 2. Racelogic, *Mercedes-E-Class_W212_2010-2016.REF* (VBOX CAN database, "Racelogic Can Data File V1a").
+3. W212 hub transmission scans, files 0027–0030 (labels D, N, R, P), 2011 E350 4MATIC, Nov 2, 2026.
